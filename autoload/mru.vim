@@ -1,0 +1,61 @@
+
+if has('vimscript-3')
+    scriptversion 3
+else
+    finish
+endif
+
+function! mru#exec() abort
+    let paths = s:mru_paths()
+    let path = s:fullpath(expand('%'))
+    if 0 <= index(paths, path)
+        call remove(paths, path)
+    endif
+    let winid = popup_menu(paths, {
+        \   'title' : 'Most Recently Used',
+        \   'pos' : 'center',
+        \   'padding' : [1,3,1,3],
+        \   'close' : 'button',
+        \   'maxwidth' : &columns * 2 / 3,
+        \   'maxheight' : &lines * 2 / 3,
+        \   'callback' : function('s:mru_callback'),
+        \ })
+endfunction
+
+function! mru#bufenter() abort
+    let path = s:fullpath(expand('%'))
+    if filereadable(path) && (&buftype != 'help') && (path != s:mru_cache_path)
+        let paths = [path]
+        for x in s:mru_paths()
+            let x = s:fullpath(x)
+            if -1 == index(paths, x)
+                let paths += [x]
+            endif
+        endfor
+        call writefile(uniq(paths)[:(s:mru_limit)], s:mru_cache_path)
+    endif
+endfunction
+
+function! s:fullpath(path) abort
+    return fnamemodify(a:path, ':p:gs?\\?/?')
+endfunction
+
+function! s:mru_paths() abort
+    let paths = []
+    if filereadable(s:mru_cache_path)
+        let paths = readfile(s:mru_cache_path)
+    endif
+    return paths
+endfunction
+
+function! s:mru_callback(id, key) abort
+    if 0 <= a:key
+        let path = getbufline(winbufnr(a:id), a:key)[0]
+        let matches = filter(getbufinfo(), {i,x -> s:fullpath(x.name) == path })
+        execute printf('%s %s', (!empty(matches) ? 'buffer' : 'edit'), escape(path, ' \'))
+    endif
+endfunction
+
+let s:mru_cache_path = s:fullpath(expand('<sfile>:h:h') .. '/.most_recently_used')
+let s:mru_limit = 30
+
