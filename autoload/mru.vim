@@ -13,13 +13,19 @@ function! mru#exec() abort
     endif
     let tstatus = term_getstatus(bufnr())
     if (tstatus != 'finished') && !empty(tstatus)
-        call popup_notification('running terminal!', {
+        call popup_notification('running terminal', {
+            \   'title' : 'Most Recently Used',
+            \   'pos' : 'center',
+            \   'padding' : [1,3,1,3],
+            \ })
+    elseif &modified
+        call popup_notification('current buffer is modified', {
             \   'title' : 'Most Recently Used',
             \   'pos' : 'center',
             \   'padding' : [1,3,1,3],
             \ })
     elseif empty(paths)
-        call popup_notification('no most recently used!', {
+        call popup_notification('no most recently used', {
             \   'title' : 'Most Recently Used',
             \   'pos' : 'center',
             \   'padding' : [1,3,1,3],
