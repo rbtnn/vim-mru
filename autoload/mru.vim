@@ -25,6 +25,22 @@ function! mru#exec() abort
             \   'padding' : [1,3,1,3],
             \ })
     else
+        " calcate the width of first column
+        let max = 0
+        for i in range(0, len(paths) - 1)
+            let fname = fnamemodify(paths[i], ':t')
+            if max < strdisplaywidth(fname)
+                let max = strdisplaywidth(fname)
+            endif
+        endfor
+
+        " make lines
+        for i in range(0, len(paths) - 1)
+            let fname = fnamemodify(paths[i], ':t')
+            let dir = fnamemodify(paths[i], ':h')
+            let paths[i] = printf('%s | %s', s:padding_right_space(fname, max), dir)
+        endfor
+
         call popup_menu(paths, {
             \   'title' : 'Most Recently Used',
             \   'pos' : 'center',
@@ -65,10 +81,15 @@ endfunction
 
 function! s:mru_callback(id, key) abort
     if 0 <= a:key
-        let path = getbufline(winbufnr(a:id), a:key)[0]
+        let xs = split(getbufline(winbufnr(a:id), a:key)[0], '|')
+        let path = s:fullpath(trim(xs[1]) .. '/' .. trim(xs[0]))
         let matches = filter(getbufinfo(), {i,x -> s:fullpath(x.name) == path })
         execute printf('%s %s', (!empty(matches) ? 'buffer' : 'edit'), escape(path, ' \'))
     endif
+endfunction
+
+function! s:padding_right_space(text, width)
+    return a:text .. repeat(' ', a:width - strdisplaywidth(a:text))
 endfunction
 
 let s:mru_cache_path = s:fullpath(expand('<sfile>:h:h') .. '/.most_recently_used')
