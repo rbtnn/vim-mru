@@ -11,15 +11,30 @@ function! mru#exec() abort
     if 0 <= index(paths, path)
         call remove(paths, path)
     endif
-    let winid = popup_menu(paths, {
-        \   'title' : 'Most Recently Used',
-        \   'pos' : 'center',
-        \   'padding' : [1,3,1,3],
-        \   'close' : 'button',
-        \   'maxwidth' : &columns * 2 / 3,
-        \   'maxheight' : &lines * 2 / 3,
-        \   'callback' : function('s:mru_callback'),
-        \ })
+    let tstatus = term_getstatus(bufnr())
+    if (tstatus != 'finished') && !empty(tstatus)
+        call popup_notification('running terminal!', {
+            \   'title' : 'Most Recently Used',
+            \   'pos' : 'center',
+            \   'padding' : [1,3,1,3],
+            \ })
+    elseif empty(paths)
+        call popup_notification('no most recently used!', {
+            \   'title' : 'Most Recently Used',
+            \   'pos' : 'center',
+            \   'padding' : [1,3,1,3],
+            \ })
+    else
+        call popup_menu(paths, {
+            \   'title' : 'Most Recently Used',
+            \   'pos' : 'center',
+            \   'padding' : [1,3,1,3],
+            \   'close' : 'button',
+            \   'maxwidth' : &columns * 2 / 3,
+            \   'maxheight' : &lines * 2 / 3,
+            \   'callback' : function('s:mru_callback'),
+            \ })
+    endif
 endfunction
 
 function! mru#bufenter() abort
