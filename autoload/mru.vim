@@ -74,7 +74,7 @@ endfunction
 function! s:mru_paths() abort
     let paths = []
     if filereadable(s:mru_cache_path)
-        let paths = readfile(s:mru_cache_path)
+        let paths = filter(readfile(s:mru_cache_path), { i, x -> filereadable(x) })
     endif
     return paths
 endfunction
