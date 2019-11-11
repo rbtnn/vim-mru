@@ -13,13 +13,19 @@ function! mru#exec() abort
     endif
     let tstatus = term_getstatus(bufnr())
     if (tstatus != 'finished') && !empty(tstatus)
-        call popup_notification('running terminal', {
+        call popup_notification('could not open on running terminal buffer', {
+            \   'title' : 'Most Recently Used',
+            \   'pos' : 'center',
+            \   'padding' : [1,3,1,3],
+            \ })
+    elseif !empty(getcmdwintype())
+        call popup_notification('could not open on command-line window', {
             \   'title' : 'Most Recently Used',
             \   'pos' : 'center',
             \   'padding' : [1,3,1,3],
             \ })
     elseif &modified
-        call popup_notification('current buffer is modified', {
+        call popup_notification('could not open on modified buffer', {
             \   'title' : 'Most Recently Used',
             \   'pos' : 'center',
             \   'padding' : [1,3,1,3],
