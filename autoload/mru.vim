@@ -6,7 +6,7 @@ else
 endif
 
 function! mru#exec() abort
-    let paths = s:mru_paths()
+    let paths = filter(s:mru_paths(), { i, x -> filereadable(x) })
     let path = s:fullpath(expand('%'))
     if 0 <= index(paths, path)
         call remove(paths, path)
@@ -54,7 +54,7 @@ function! mru#exec() abort
         endfor
 
         call popup_menu(paths, {
-            \   'title' : 'Most Recently Used',
+            \   'title' : printf('Most Recently Used(%d)', len(paths)),
             \   'pos' : 'center',
             \   'padding' : [1,3,1,3],
             \   'close' : 'button',
@@ -86,7 +86,7 @@ endfunction
 function! s:mru_paths() abort
     let paths = []
     if filereadable(s:mru_cache_path)
-        let paths = filter(readfile(s:mru_cache_path), { i, x -> filereadable(x) })
+        let paths = readfile(s:mru_cache_path)
     endif
     return paths
 endfunction
@@ -105,5 +105,5 @@ function! s:padding_right_space(text, width)
 endfunction
 
 let s:mru_cache_path = s:fullpath(expand('<sfile>:h:h') .. '/.most_recently_used')
-let s:mru_limit = 30
+let s:mru_limit = 100
 
