@@ -5,8 +5,14 @@ else
     finish
 endif
 
-function! mru#exec() abort
-    let paths = filter(s:mru_paths(), { i, x -> filereadable(x) })
+function! mru#exec(q_args) abort
+    let paths = []
+    for x in s:mru_paths()
+        let name = fnamemodify(x, ':t')
+        if name =~# a:q_args
+            let paths += [x]
+        endif
+    endfor
     let path = s:fullpath(expand('%'))
     if 0 <= index(paths, path)
         call remove(paths, path)
@@ -86,7 +92,7 @@ endfunction
 function! s:mru_paths() abort
     let paths = []
     if filereadable(s:mru_cache_path)
-        let paths = readfile(s:mru_cache_path)
+        let paths = filter(readfile(s:mru_cache_path), { i,x -> filereadable(x) })
     endif
     return paths
 endfunction
@@ -105,5 +111,5 @@ function! s:padding_right_space(text, width)
 endfunction
 
 let s:mru_cache_path = s:fullpath(expand('<sfile>:h:h') .. '/.most_recently_used')
-let s:mru_limit = 100
+let s:mru_limit = 300
 

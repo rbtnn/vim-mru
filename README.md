@@ -5,7 +5,7 @@ This plugin provides to select a file for editing most recently used files by po
 
 ## Usage
 
-### :MRU
+### :MRU [{filter}]
 
 ![](https://raw.githubusercontent.com/rbtnn/vim-mru/master/mru.gif)
 

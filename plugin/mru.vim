@@ -7,7 +7,7 @@ endif
 
 let g:loaded_mru = 1
 
-command! -bar -nargs=0   MRU     :call mru#exec()
+command! -nargs=*   MRU     :call mru#exec(<q-args>)
 
 augroup most-recently-used
     autocmd!
