@@ -20,25 +20,25 @@ function! mru#exec(q_args) abort
     let tstatus = term_getstatus(bufnr())
     if (tstatus != 'finished') && !empty(tstatus)
         call popup_notification('could not open on running terminal buffer', {
-            \   'title' : 'Most Recently Used',
+            \   'title' : 'mru',
             \   'pos' : 'center',
             \   'padding' : [1,3,1,3],
             \ })
     elseif !empty(getcmdwintype())
         call popup_notification('could not open on command-line window', {
-            \   'title' : 'Most Recently Used',
+            \   'title' : 'mru',
             \   'pos' : 'center',
             \   'padding' : [1,3,1,3],
             \ })
     elseif &modified
         call popup_notification('could not open on modified buffer', {
-            \   'title' : 'Most Recently Used',
+            \   'title' : 'mru',
             \   'pos' : 'center',
             \   'padding' : [1,3,1,3],
             \ })
     elseif empty(paths)
         call popup_notification('no most recently used', {
-            \   'title' : 'Most Recently Used',
+            \   'title' : 'mru',
             \   'pos' : 'center',
             \   'padding' : [1,3,1,3],
             \ })
@@ -60,7 +60,7 @@ function! mru#exec(q_args) abort
         endfor
 
         call popup_menu(paths, {
-            \   'title' : printf('Most Recently Used(%d)', len(paths)),
+            \   'title' : printf('mru(%d)', len(paths)),
             \   'pos' : 'center',
             \   'padding' : [1,3,1,3],
             \   'close' : 'button',

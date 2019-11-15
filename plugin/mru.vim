@@ -9,7 +9,7 @@ let g:loaded_mru = 1
 
 command! -nargs=*   MRU     :call mru#exec(<q-args>)
 
-augroup most-recently-used
+augroup mru
     autocmd!
     autocmd BufEnter * :call mru#bufenter()
 augroup END
