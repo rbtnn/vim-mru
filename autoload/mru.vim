@@ -76,7 +76,6 @@ function! mru#bufenter() abort
     if filereadable(path) && (&buftype != 'help') && (path != s:mru_cache_path)
         let paths = [path]
         for x in s:mru_paths()
-            let x = s:fullpath(x)
             if -1 == index(paths, x)
                 let paths += [x]
             endif
@@ -86,13 +85,19 @@ function! mru#bufenter() abort
 endfunction
 
 function! s:fullpath(path) abort
-    return fnamemodify(a:path, ':p:gs?\\?/?')
+    return fnamemodify(resolve(a:path), ':p:gs?\\?/?')
 endfunction
 
 function! s:mru_paths() abort
     let paths = []
     if filereadable(s:mru_cache_path)
-        let paths = filter(readfile(s:mru_cache_path), { i,x -> filereadable(x) })
+        let paths = []
+        for path in readfile(s:mru_cache_path)
+            let path = s:fullpath(path)
+            if filereadable(path)
+                let paths += [path]
+            endif
+        endfor
     endif
     return paths
 endfunction
@@ -102,7 +107,11 @@ function! s:mru_callback(id, key) abort
         let xs = split(getbufline(winbufnr(a:id), a:key)[0], '|')
         let path = s:fullpath(trim(xs[1]) .. '/' .. trim(xs[0]))
         let matches = filter(getbufinfo(), {i,x -> s:fullpath(x.name) == path })
-        execute printf('%s %s', (!empty(matches) ? 'buffer' : 'edit'), escape(path, ' \'))
+        if !empty(matches)
+            execute printf('%s %d', 'buffer', matches[0]['bufnr'])
+        else
+            execute printf('%s %s', 'edit', escape(path, ' \'))
+        endif
     endif
 endfunction
 
