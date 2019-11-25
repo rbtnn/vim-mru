@@ -76,6 +76,11 @@ function! s:save_json(jsons) abort
 endfunction
 
 function! s:fullpath(path) abort
+    let path = a:path
+    " resolve a path if the result is not UNC path.
+    if resolve(path) !~# '^//'
+        let path = resolve(path)
+    endif
     return fnamemodify(resolve(a:path), ':p:gs?\\?/?')
 endfunction
 
@@ -91,7 +96,10 @@ function! s:mru_jsons() abort
             endif
             if has_key(json, 'path')
                 let json['path'] = s:fullpath(json['path'])
-                let jsons += [json]
+                " does not support UNC path.
+                if json['path'] !~# '^//'
+                    let jsons += [json]
+                endif
             endif
         endfor
     endif

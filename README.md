@@ -19,6 +19,10 @@ This plugin provides to select a file for editing most recently used files by po
 * This plugin does not provide to customize user-settings.
 * This plugin provides only one command.
 
+##  Limits and specifications
+
+* This plugin does not support UNC path.
+
 ## License
 
 Distributed under MIT License. See LICENSE.
