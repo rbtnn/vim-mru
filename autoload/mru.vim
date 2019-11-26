@@ -86,6 +86,7 @@ endfunction
 
 function! s:mru_jsons() abort
     let jsons = []
+    let added_paths = []
     if filereadable(s:mru_cache_path)
         for line in readfile(s:mru_cache_path)
             let json = {}
@@ -98,7 +99,8 @@ function! s:mru_jsons() abort
                 let json['path'] = s:fullpath(json['path'])
                 " does not support UNC path.
                 if json['path'] !~# '^//'
-                    if filereadable(json['path'])
+                    if filereadable(json['path']) && (-1 == index(added_paths, json['path']))
+                        let added_paths += [json['path']]
                         let jsons += [json]
                     endif
                 endif
