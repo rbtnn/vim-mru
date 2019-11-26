@@ -98,7 +98,9 @@ function! s:mru_jsons() abort
                 let json['path'] = s:fullpath(json['path'])
                 " does not support UNC path.
                 if json['path'] !~# '^//'
-                    let jsons += [json]
+                    if filereadable(json['path'])
+                        let jsons += [json]
+                    endif
                 endif
             endif
         endfor
