@@ -27,12 +27,26 @@ function! mru#exec(q_args) abort
     elseif empty(jsons)
         call popup_notification('no most recently used', s:mru_defaultopt)
     else
+        " make display-string for lnum
+        for json in jsons
+            if -1 == json['lnum']
+                let json['lnum'] = ''
+            else
+                let json['lnum'] = printf('Line %d', json['lnum'])
+            endif
+        endfor
+
         " calcate the width of first column
-        let max = 0
+        let fname_max = 0
+        let lnum_max = 0
         for json in jsons
             let fname = fnamemodify(json['path'], ':t')
-            if max < strdisplaywidth(fname)
-                let max = strdisplaywidth(fname)
+            if fname_max < strdisplaywidth(fname)
+                let fname_max = strdisplaywidth(fname)
+            endif
+            let lnum = json['lnum']
+            if lnum_max < strdisplaywidth(lnum)
+                let lnum_max = strdisplaywidth(lnum)
             endif
         endfor
 
@@ -40,9 +54,11 @@ function! mru#exec(q_args) abort
         let lines = []
         for json in jsons
             let fname = fnamemodify(json['path'], ':t')
+            let lnum = json['lnum']
             let dir = fnamemodify(json['path'], ':h')
             let lines += [join([
-                \ s:padding_right_space(fname, max),
+                \ s:padding_right_space(fname, fname_max),
+                \ s:padding_right_space(lnum, lnum_max),
                 \ dir], s:mru_delimiter)]
         endfor
 
@@ -57,10 +73,11 @@ function! mru#exec(q_args) abort
     endif
 endfunction
 
-function! mru#bufenter() abort
+function! mru#bufleave() abort
     let path = s:fullpath(expand('%'))
+    let lnum = line('.')
     if filereadable(path) && (&buftype != 'help') && (path != s:mru_cache_path)
-        let jsons = [{ 'path' : path, }]
+        let jsons = [{ 'path' : path, 'lnum' : lnum, }]
         for json in s:mru_jsons()
             if json['path'] != path
                 let jsons += [json]
@@ -97,6 +114,9 @@ function! s:mru_jsons() abort
             endif
             if has_key(json, 'path')
                 let json['path'] = s:fullpath(json['path'])
+                if !has_key(json, 'lnum')
+                    let json['lnum'] = -1
+                endif
                 " does not support UNC path.
                 if json['path'] !~# '^//'
                     if filereadable(json['path']) && (-1 == index(added_paths, json['path']))
@@ -114,11 +134,16 @@ function! s:mru_callback(id, key) abort
     if 0 < a:key
         let jsons = getwinvar(a:id, 'jsons', [])
         let path = jsons[(a:key - 1)]['path']
+        let lnum = jsons[(a:key - 1)]['lnum']
+        let lnum = matchstr(lnum, '^Line \zs\d\+$')
+        if empty(lnum)
+            let lnum = '1'
+        endif
         let matches = filter(getbufinfo(), {i,x -> s:fullpath(x.name) == path })
         if !empty(matches)
-            execute printf('%s %d', 'buffer', matches[0]['bufnr'])
+            execute printf('%s +%s %d', 'buffer', lnum, matches[0]['bufnr'])
         else
-            execute printf('%s %s', 'edit', escape(path, ' \'))
+            execute printf('%s +%s %s', 'edit', lnum, escape(path, ' \'))
         endif
     endif
 endfunction
@@ -129,7 +154,7 @@ endfunction
 
 let s:mru_cache_path = s:fullpath(expand('<sfile>:h:h') .. '/.most_recently_used')
 let s:mru_limit = 300
-let s:mru_delimiter = '|'
+let s:mru_delimiter = ' | '
 let s:mru_title = 'mru'
 let s:mru_defaultopt = {
     \   'title' : s:mru_title,

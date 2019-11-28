@@ -11,6 +11,6 @@ command! -nargs=*   MRU     :call mru#exec(<q-args>)
 
 augroup mru
     autocmd!
-    autocmd BufEnter * :call mru#bufenter()
+    autocmd BufLeave * :call mru#bufleave()
 augroup END
 
