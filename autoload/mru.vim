@@ -6,7 +6,7 @@ else
 endif
 
 function! mru#exec(q_args) abort
-    let jsons = s:mru_jsons()
+    let jsons = deepcopy(s:mru_jsons)
 
     " remove the current file
     let path = s:fullpath(expand('%'))
@@ -73,35 +73,7 @@ function! mru#exec(q_args) abort
     endif
 endfunction
 
-function! mru#bufleave() abort
-    let path = s:fullpath(expand('%'))
-    let lnum = line('.')
-    if filereadable(path) && (&buftype != 'help') && (path != s:mru_cache_path)
-        let jsons = [{ 'path' : path, 'lnum' : lnum, }]
-        for json in s:mru_jsons()
-            if json['path'] != path
-                let jsons += [json]
-            endif
-        endfor
-        call s:save_json(jsons)
-    endif
-endfunction
-
-function! s:save_json(jsons) abort
-    let lines = map(deepcopy(a:jsons), { i,x -> json_encode(x) })
-    call writefile(lines[:(s:mru_limit)], s:mru_cache_path)
-endfunction
-
-function! s:fullpath(path) abort
-    let path = a:path
-    " resolve a path if the result is not UNC path.
-    if resolve(path) !~# '^//'
-        let path = resolve(path)
-    endif
-    return fnamemodify(resolve(a:path), ':p:gs?\\?/?')
-endfunction
-
-function! s:mru_jsons() abort
+function! mru#vimenter() abort
     let jsons = []
     let added_paths = []
     if filereadable(s:mru_cache_path)
@@ -127,7 +99,35 @@ function! s:mru_jsons() abort
             endif
         endfor
     endif
-    return jsons
+    let s:mru_jsons = jsons
+endfunction
+
+function! mru#vimleave() abort
+    let lines = map(s:mru_jsons, { i,x -> json_encode(x) })
+    call writefile(lines[:(s:mru_limit)], s:mru_cache_path)
+endfunction
+
+function! mru#bufleave() abort
+    let path = s:fullpath(expand('%'))
+    let lnum = line('.')
+    if filereadable(path) && (&buftype != 'help') && (path != s:mru_cache_path)
+        let jsons = [{ 'path' : path, 'lnum' : lnum, }]
+        for json in s:mru_jsons
+            if json['path'] != path
+                let jsons += [json]
+            endif
+        endfor
+        let s:mru_jsons = jsons
+    endif
+endfunction
+
+function! s:fullpath(path) abort
+    let path = a:path
+    " resolve a path if the result is not UNC path.
+    if resolve(path) !~# '^//'
+        let path = resolve(path)
+    endif
+    return fnamemodify(resolve(a:path), ':p:gs?\\?/?')
 endfunction
 
 function! s:mru_callback(id, key) abort
@@ -152,14 +152,18 @@ function! s:padding_right_space(text, width)
     return a:text .. repeat(' ', a:width - strdisplaywidth(a:text))
 endfunction
 
-let s:mru_cache_path = s:fullpath(expand('<sfile>:h:h') .. '/.most_recently_used')
+let s:mru_jsons = get(s:, 'mru_jsons', [])
 let s:mru_limit = 300
 let s:mru_delimiter = ' | '
-let s:mru_title = 'mru'
 let s:mru_defaultopt = {
     \   'title' : s:mru_title,
     \   'pos' : 'center',
     \   'padding' : [1,3,1,3],
     \ }
+let s:mru_title = 'mru'
+let s:mru_cache_path_old = s:fullpath(expand('<sfile>:h:h') .. '/.most_recently_used')
+let s:mru_cache_path = s:fullpath(expand('<sfile>:h:h') .. '/.mru')
 
-
+if filereadable(s:mru_cache_path_old) && !filereadable(s:mru_cache_path)
+    call rename(s:mru_cache_path_old, s:mru_cache_path)
+endif
