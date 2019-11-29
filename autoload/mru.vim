@@ -6,11 +6,6 @@ else
 endif
 
 function! s:fullpath(path) abort
-    let path = a:path
-    " resolve a path if the result is not UNC path.
-    if resolve(path) !~# '^//'
-        let path = resolve(path)
-    endif
     return fnamemodify(resolve(a:path), ':p:gs?\\?/?')
 endfunction
 
@@ -110,11 +105,10 @@ function! mru#vimenter() abort
             endif
             if has_key(json, 'path')
                 let json['path'] = s:fullpath(json['path'])
-                if !has_key(json, 'lnum')
-                    let json['lnum'] = -1
-                endif
-                " does not support UNC path.
-                if json['path'] !~# '^//'
+                if s:supportable(json['path'], '')
+                    if !has_key(json, 'lnum')
+                        let json['lnum'] = -1
+                    endif
                     if filereadable(json['path']) && (-1 == index(added_paths, json['path']))
                         let added_paths += [json['path']]
                         let jsons += [json]
@@ -134,7 +128,7 @@ endfunction
 function! mru#bufleave() abort
     let path = s:fullpath(expand('%'))
     let lnum = line('.')
-    if filereadable(path) && (&buftype != 'help') && (path != s:mru_cache_path)
+    if s:supportable(path, &buftype)
         let jsons = [{ 'path' : path, 'lnum' : lnum, }]
         for json in s:mru_jsons
             if json['path'] != path
@@ -143,6 +137,17 @@ function! mru#bufleave() abort
         endfor
         let s:mru_jsons = jsons
     endif
+endfunction
+
+function! s:supportable(path, buftype) abort
+    let path = s:fullpath(a:path)
+    " does not support UNC path.
+    if path !~# '^//'
+        if filereadable(path) && (a:buftype != 'help') && (path != s:mru_cache_path)
+            return v:true
+        endif
+    endif
+    return v:false
 endfunction
 
 function! s:mru_callback(id, key) abort
