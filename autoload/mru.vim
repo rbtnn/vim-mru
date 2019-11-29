@@ -5,6 +5,27 @@ else
     finish
 endif
 
+function! s:fullpath(path) abort
+    let path = a:path
+    " resolve a path if the result is not UNC path.
+    if resolve(path) !~# '^//'
+        let path = resolve(path)
+    endif
+    return fnamemodify(resolve(a:path), ':p:gs?\\?/?')
+endfunction
+
+let s:mru_jsons = get(s:, 'mru_jsons', [])
+let s:mru_limit = 300
+let s:mru_delimiter = ' | '
+let s:mru_title = 'mru'
+let s:mru_cache_path_old = s:fullpath(expand('<sfile>:h:h') .. '/.most_recently_used')
+let s:mru_cache_path = s:fullpath(expand('<sfile>:h:h') .. '/.mru')
+let s:mru_defaultopt = {
+    \   'title' : s:mru_title,
+    \   'pos' : 'center',
+    \   'padding' : [1,3,1,3],
+    \ }
+
 function! mru#exec(q_args) abort
     let jsons = deepcopy(s:mru_jsons)
 
@@ -74,6 +95,9 @@ function! mru#exec(q_args) abort
 endfunction
 
 function! mru#vimenter() abort
+    if filereadable(s:mru_cache_path_old) && !filereadable(s:mru_cache_path)
+        call rename(s:mru_cache_path_old, s:mru_cache_path)
+    endif
     let jsons = []
     let added_paths = []
     if filereadable(s:mru_cache_path)
@@ -121,15 +145,6 @@ function! mru#bufleave() abort
     endif
 endfunction
 
-function! s:fullpath(path) abort
-    let path = a:path
-    " resolve a path if the result is not UNC path.
-    if resolve(path) !~# '^//'
-        let path = resolve(path)
-    endif
-    return fnamemodify(resolve(a:path), ':p:gs?\\?/?')
-endfunction
-
 function! s:mru_callback(id, key) abort
     if 0 < a:key
         let jsons = getwinvar(a:id, 'jsons', [])
@@ -152,18 +167,3 @@ function! s:padding_right_space(text, width)
     return a:text .. repeat(' ', a:width - strdisplaywidth(a:text))
 endfunction
 
-let s:mru_jsons = get(s:, 'mru_jsons', [])
-let s:mru_limit = 300
-let s:mru_delimiter = ' | '
-let s:mru_defaultopt = {
-    \   'title' : s:mru_title,
-    \   'pos' : 'center',
-    \   'padding' : [1,3,1,3],
-    \ }
-let s:mru_title = 'mru'
-let s:mru_cache_path_old = s:fullpath(expand('<sfile>:h:h') .. '/.most_recently_used')
-let s:mru_cache_path = s:fullpath(expand('<sfile>:h:h') .. '/.mru')
-
-if filereadable(s:mru_cache_path_old) && !filereadable(s:mru_cache_path)
-    call rename(s:mru_cache_path_old, s:mru_cache_path)
-endif
