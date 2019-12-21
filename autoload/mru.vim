@@ -32,6 +32,10 @@ function! mru#exec(q_args) abort
 
     " filter matching q_args
     call filter(jsons, { i,x -> fnamemodify(x['path'], ':t') =~# a:q_args })
+    " filter matching filereadable
+    call filter(jsons, { i,x -> s:supportable(x['path'], '') })
+    " filter adapting wildignore 
+    call filter(jsons, { i,x -> !empty(expand(x['path'], v:false)) })
 
     let tstatus = term_getstatus(bufnr())
     if (tstatus != 'finished') && !empty(tstatus)
