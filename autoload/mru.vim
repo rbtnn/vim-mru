@@ -13,7 +13,6 @@ let s:mru_jsons = get(s:, 'mru_jsons', [])
 let s:mru_limit = 300
 let s:mru_delimiter = ' | '
 let s:mru_title = 'mru'
-let s:mru_cache_path_old = s:fullpath(expand('<sfile>:h:h') .. '/.most_recently_used')
 let s:mru_cache_path = s:fullpath(expand('<sfile>:h:h') .. '/.mru')
 let s:mru_defaultopt = {
     \   'title' : s:mru_title,
@@ -30,11 +29,13 @@ function! mru#exec(q_args) abort
         call filter(jsons, { i,x -> x['path'] != path })
     endif
 
+    " filter hostname
+    call filter(jsons, { i,x -> x['hostname'] == hostname() })
     " filter matching q_args
     call filter(jsons, { i,x -> fnamemodify(x['path'], ':t') =~# a:q_args })
     " filter matching filereadable
     call filter(jsons, { i,x -> s:supportable(x['path'], '') })
-    " filter adapting wildignore 
+    " filter adapting wildignore
     call filter(jsons, { i,x -> !empty(expand(x['path'], v:false)) })
 
     let tstatus = term_getstatus(bufnr())
@@ -94,9 +95,6 @@ function! mru#exec(q_args) abort
 endfunction
 
 function! mru#vimenter() abort
-    if filereadable(s:mru_cache_path_old) && !filereadable(s:mru_cache_path)
-        call rename(s:mru_cache_path_old, s:mru_cache_path)
-    endif
     let jsons = []
     let added_paths = []
     if filereadable(s:mru_cache_path)
@@ -113,6 +111,9 @@ function! mru#vimenter() abort
                     if !has_key(json, 'lnum')
                         let json['lnum'] = -1
                     endif
+                    if !has_key(json, 'hostname')
+                        let json['hostname'] = hostname()
+                    endif
                     if filereadable(json['path']) && (-1 == index(added_paths, json['path']))
                         let added_paths += [json['path']]
                         let jsons += [json]
@@ -125,7 +126,7 @@ function! mru#vimenter() abort
 endfunction
 
 function! mru#vimleave() abort
-    let lines = map(s:mru_jsons, { i,x -> json_encode(x) })
+    let lines = map(deepcopy(s:mru_jsons), { i,x -> json_encode(x) })
     call writefile(lines[:(s:mru_limit)], s:mru_cache_path)
 endfunction
 
@@ -133,7 +134,7 @@ function! mru#bufleave() abort
     let path = s:fullpath(expand('%'))
     let lnum = line('.')
     if s:supportable(path, &buftype)
-        let jsons = [{ 'path' : path, 'lnum' : lnum, }]
+        let jsons = [{ 'path' : path, 'lnum' : lnum, 'hostname' : hostname() }]
         for json in s:mru_jsons
             if json['path'] != path
                 let jsons += [json]
