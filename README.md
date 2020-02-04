@@ -1,7 +1,7 @@
 
 # vim-mru
 
-This plugin provides to select a file for editing most recently used files by popup window.
+This plugin provides to select a file for editing **M**ost **R**ecently **U**sed files by popup window.
 
 ## Usage
 
